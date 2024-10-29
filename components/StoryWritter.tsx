@@ -1,4 +1,6 @@
 'use client'
+import renderEventMessage from '@/lib/renderEventMessage'
+import { Frame } from '@gptscript-ai/gptscript'
 import React, { useState } from 'react'
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
@@ -13,6 +15,7 @@ function StoryWritter() {
     const [runStarted, setRunStarted] = useState<boolean>(false);
     const [runFinished, setRunFinished] = useState<boolean | null>(null);
     const [currentTool, setCurrentTool] = useState("")
+    const [events, setEvents] = useState<Frame[]>([]);
 
     async function runScript() {
         setRunStarted(true);
@@ -57,9 +60,24 @@ function StoryWritter() {
 
             eventData.forEach(data => {
                 try {
-                    
+                    const parsedData = JSON.parse(data);
+                    if(parsedData.type==="callProgress"){
+                        setProgress(parsedData.output[parsedData.output.length -1].content);
+                        setCurrentTool(parsedData.tool?.description || "");
+
+                    }
+                    else if(parsedData.type === "callStart"){
+                        setCurrentTool(parsedData.tool?.description || "");
+
+                    }
+                    else if(parsedData.type ==="runFinish"){
+                        setRunFinished(true);
+                        setRunStarted(false);
+                    } else{
+                        setEvents((prevEvents =>[...prevEvents, parsedData]));
+                    }
                 } catch (error) {
-                    
+                    console.error("Failed to parse JSON", error);
                 }
             })
         }        
@@ -110,6 +128,14 @@ function StoryWritter() {
                 )}
 
                 {/* Render Events  */}
+                <div className='space-y-5'>
+                    {events.map((event, index) =>(
+                        <div key={index}>
+                                <span className='mr-5'>{">>"}</span>
+                                {renderEventMessage(event)}
+                        </div>
+                    ))}
+                </div>
 
                 {runStarted && (
                      <div className=''>
