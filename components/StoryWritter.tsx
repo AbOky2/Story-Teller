@@ -29,6 +29,11 @@ function StoryWritter() {
             //Handle stream from the API
             console.log("Streaming started");
 
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            handleStream(reader, decoder);
+
         }
         else{
             setRunFinished(true);
@@ -38,6 +43,27 @@ function StoryWritter() {
     
     }
 
+    async function handleStream(reader : ReadableStreamDefaultReader<Uint8Array>, decoder : TextDecoder) {
+        //Cest ici que l'on gere les flux provenant de notre API
+        while(true){
+            const {done, value} = await reader.read();
+            if(done) break;
+        
+            const chunk = decoder.decode(value, {stream : true});
+
+            const eventData = chunk.split("\n\n")
+            .filter((line)=>line.startsWith("event: "))
+            .map((line)=> line.replace(/^event : /, ""));
+
+            eventData.forEach(data => {
+                try {
+                    
+                } catch (error) {
+                    
+                }
+            })
+        }        
+    }
 
   return (
     <div className='flex flex-col container'>
